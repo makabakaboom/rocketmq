@@ -44,25 +44,13 @@ public class GrayProducer {
                  * Create a message instance, specifying topic, tag and message body.
                  */
 
-                SendResult sendResult;
-                if ((i % 10) == 0) {
-                    Message msg = new Message("TopicTest" /* Topic */,
-                            "TagA" /* Tag */,
-                            ("GRAY LABEL MESSAGE " + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
-                    );
+                Message msg = new Message("TopicTest" /* Topic */,
+                        "TagA" /* Tag */,
+                        (i % 10) == 0 ? ("GRAY LABEL MESSAGE " + i).getBytes(RemotingHelper.DEFAULT_CHARSET)
+                        : ("NORMAL MESSAGE " + i).getBytes(RemotingHelper.DEFAULT_CHARSET)/* Message body */
+                );
 
-                    sendResult = producer.send(msg, new SelectMessageQueueSpecialLabel(), MixAll.GRAY_DEPLOYMENT);
-                    continue;
-                } else {
-                    Message msg = new Message("TopicTest" /* Topic */,
-                            "TagA" /* Tag */,
-                            ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
-                    );
-
-                    sendResult = producer.send(msg);
-                }
-
-
+                SendResult sendResult = producer.send(msg, new SelectMessageQueueSpecialLabel(), (i % 10) == 0 ? MixAll.GRAY_DEPLOYMENT : null);
 
                 System.out.printf("%s%n", sendResult);
             } catch (Exception e) {
