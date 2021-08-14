@@ -32,6 +32,7 @@ public class AllocateMessageQueueSpecialLabel implements AllocateMessageQueueStr
     private double percentage = 0.2;
     private AllocateMessageQueueStrategy defaultAllocateMessageQueueStrategy;
     private String specialLabel = System.getProperty("rocketmq.consumer.label", "%GRAY%");
+    private boolean allocateToAllIfNoSpecialLabel = true;
 
 
     public AllocateMessageQueueSpecialLabel() {
@@ -42,8 +43,17 @@ public class AllocateMessageQueueSpecialLabel implements AllocateMessageQueueStr
         this(percentage, new AllocateMessageQueueAveragely());
     }
 
+    public AllocateMessageQueueSpecialLabel(boolean allocateToAllIfNoSpecialLabel) {
+        this(new AllocateMessageQueueAveragely(), allocateToAllIfNoSpecialLabel);
+    }
+
     public AllocateMessageQueueSpecialLabel(AllocateMessageQueueStrategy defaultAllocateMessageQueueStrategy) {
         this.defaultAllocateMessageQueueStrategy = defaultAllocateMessageQueueStrategy;
+    }
+
+    public AllocateMessageQueueSpecialLabel(AllocateMessageQueueStrategy defaultAllocateMessageQueueStrategy, boolean allocateToAllIfNoSpecialLabel) {
+        this.defaultAllocateMessageQueueStrategy = defaultAllocateMessageQueueStrategy;
+        this.allocateToAllIfNoSpecialLabel = allocateToAllIfNoSpecialLabel;
     }
 
     public AllocateMessageQueueSpecialLabel(double percentage, AllocateMessageQueueStrategy defaultAllocateMessageQueueStrategy) {
@@ -55,6 +65,13 @@ public class AllocateMessageQueueSpecialLabel implements AllocateMessageQueueStr
         this.percentage = percentage;
         this.defaultAllocateMessageQueueStrategy = defaultAllocateMessageQueueStrategy;
         this.specialLabel = specialLabel;
+    }
+
+    public AllocateMessageQueueSpecialLabel(double percentage, AllocateMessageQueueStrategy defaultAllocateMessageQueueStrategy, String specialLabel, boolean allocateToAllIfNoSpecialLabel) {
+        this.percentage = percentage;
+        this.defaultAllocateMessageQueueStrategy = defaultAllocateMessageQueueStrategy;
+        this.specialLabel = specialLabel;
+        this.allocateToAllIfNoSpecialLabel = allocateToAllIfNoSpecialLabel;
     }
 
     @Override
@@ -102,10 +119,12 @@ public class AllocateMessageQueueSpecialLabel implements AllocateMessageQueueStr
             }
         });
 
-        specialLabelMessageQueueList.forEach(specialLabelMq -> mqAll.remove(specialLabelMq));
         List<String> specialLabelCidAll = cidAll.stream().filter(cid -> cid.contains(specialLabel)).filter(Objects::nonNull).collect(Collectors.toList());
-        specialLabelCidAll.forEach(specialLabelCid -> cidAll.remove(specialLabelCid));
 
+        if (specialLabelCidAll.size() != 0 || !allocateToAllIfNoSpecialLabel) {
+            specialLabelMessageQueueList.forEach(specialLabelMq -> mqAll.remove(specialLabelMq));
+            specialLabelCidAll.forEach(specialLabelCid -> cidAll.remove(specialLabelCid));
+        }
 
         Collections.sort(specialLabelCidAll);
         Collections.sort(specialLabelMessageQueueList);
@@ -113,6 +132,9 @@ public class AllocateMessageQueueSpecialLabel implements AllocateMessageQueueStr
         if (currentCID.contains(specialLabel)) {
             return defaultAllocateMessageQueueStrategy.allocate(consumerGroup, currentCID, specialLabelMessageQueueList, specialLabelCidAll);
         } else {
+            if (mqAll.size() == 0) {
+                return new ArrayList<>();
+            }
             return defaultAllocateMessageQueueStrategy.allocate(consumerGroup, currentCID, mqAll, cidAll);
         }
     }
