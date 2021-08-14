@@ -19,10 +19,15 @@ package org.apache.rocketmq.client.consumer.rebalance;
 
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import org.apache.rocketmq.client.log.ClientLogger;
+import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.logging.InternalLogger;
 
-import java.util.*;
+import java.util.Objects;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AllocateMessageQueueSpecialLabel implements AllocateMessageQueueStrategy {
@@ -31,7 +36,7 @@ public class AllocateMessageQueueSpecialLabel implements AllocateMessageQueueStr
 
     private double percentage = 0.2;
     private AllocateMessageQueueStrategy defaultAllocateMessageQueueStrategy;
-    private String specialLabel = System.getProperty("rocketmq.consumer.label", "%GRAY%");
+    private String specialLabel = MixAll.GRAY_DEPLOYMENT;
     private boolean allocateToAllIfNoSpecialLabel = true;
 
 
