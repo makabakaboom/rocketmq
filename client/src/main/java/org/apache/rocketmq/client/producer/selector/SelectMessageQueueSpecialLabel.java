@@ -34,7 +34,7 @@ public class SelectMessageQueueSpecialLabel implements MessageQueueSelector {
     private MessageQueueSelector defaultMessageQueueSelector;
 
     public SelectMessageQueueSpecialLabel() {
-        this(new SelectMessageQueueSpecialLabel());
+        this(new SelectMessageQueueByRandom());
     }
 
     public SelectMessageQueueSpecialLabel(double percentage) {
