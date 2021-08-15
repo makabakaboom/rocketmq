@@ -31,12 +31,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MixAll;
@@ -114,6 +109,8 @@ public class DefaultMessageStore implements MessageStore {
     private FileLock lock;
 
     boolean shutDownNormal = false;
+
+    private ConcurrentNavigableMap<Long, byte[]> haCommitLog = new ConcurrentSkipListMap<>();
 
     private final ScheduledExecutorService diskCheckScheduledExecutorService =
             Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("DiskCheckScheduledThread"));
@@ -927,7 +924,17 @@ public class DefaultMessageStore implements MessageStore {
             return false;
         }
 
-        boolean result = this.commitLog.appendData(startOffset, data);
+        haCommitLog.put(startOffset, data);
+
+        Map.Entry<Long,byte[]> entry = haCommitLog.firstEntry();
+        boolean result = false;
+        if (this.commitLog.getMaxOffset() == entry.getKey()) {
+            haCommitLog.remove(entry.getKey());
+            result = this.commitLog.appendData(entry.getKey(), entry.getValue());
+        } else {
+            return result;
+        }
+
         if (result) {
             this.reputMessageService.wakeup();
         } else {
@@ -1512,6 +1519,10 @@ public class DefaultMessageStore implements MessageStore {
     public void putMessagePositionInfo(DispatchRequest dispatchRequest) {
         ConsumeQueue cq = this.findConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
         cq.putMessagePositionInfoWrapper(dispatchRequest);
+    }
+
+    public BrokerConfig getBrokerConfig() {
+        return brokerConfig;
     }
 
     @Override

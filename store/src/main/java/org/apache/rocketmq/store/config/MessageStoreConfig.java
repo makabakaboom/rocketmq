@@ -121,6 +121,9 @@ public class MessageStoreConfig {
     @ImportantField
     private String haMasterAddress = null;
     private int haSlaveFallbehindMax = 1024 * 1024 * 256;
+
+    private int haClientCount = 10;
+
     @ImportantField
     private BrokerRole brokerRole = BrokerRole.ASYNC_MASTER;
     @ImportantField
@@ -151,6 +154,14 @@ public class MessageStoreConfig {
     private String preferredLeaderId;
 
     private boolean isEnableBatchPush = false;
+
+    public int getHaClientCount() {
+        return haClientCount;
+    }
+
+    public void setHaClientCount(int haClientCount) {
+        this.haClientCount = haClientCount;
+    }
 
     public boolean isDebugLockEnable() {
         return debugLockEnable;
